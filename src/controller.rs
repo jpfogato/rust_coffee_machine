@@ -17,12 +17,16 @@ pub struct Recipe {
     pub double: bool
 }
 pub struct Resources{
-    amount_of_water_ml: u32,
-    amount_of_coffee_beans_g: u32,
-    amount_of_residues_g: u32,
+    pub amount_of_water_ml: u32,
+    pub amount_of_coffee_beans_g: u32,
+    pub amount_of_residues_g: u32,
 }
 
-pub fn sim_user_fill_water (amount: u32) {}
+pub fn sim_user_fill_water (amount_added_ml: u32, resources: &mut Resources) -> &mut Resources {
+    resources.amount_of_water_ml = resources.amount_of_water_ml + amount_added_ml;
+    println!("Water level is now: {} ml", &resources.amount_of_water_ml);
+    resources
+}
 
 pub fn sim_user_add_beans () {}
 
@@ -33,7 +37,6 @@ pub fn dose_ground_coffee () {}
 pub fn heat_water () {}
 
 pub fn add_hot_water (recipe: Recipe) {
-    dbg!(recipe);
 }
 
 pub fn brew () {}
