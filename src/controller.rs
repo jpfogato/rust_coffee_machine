@@ -16,7 +16,8 @@ pub struct CoffeeMachine {
 }
 
 impl CoffeeMachine {
-    fn init() -> (Self, RecipeInterface, Resources) {
+    
+    pub fn init() -> (Self, RecipeInterface, Resources) {
         /*
             Initializes the coffee machine by returning an instance of Self, Recipe and Resources for operations
         */
@@ -31,15 +32,16 @@ impl CoffeeMachine {
     }
 
     pub fn grind(&mut self, resources: &mut Resources, recipe: &mut RecipeInterface) {
-        if resources.check_resources() {
+        if resources.check_resources(&recipe) {
             println!("grinding coffee...");
 
             resources.increment_ground_coffee_counter();
 
             self.global_coffees_made += 1;
 
-            resources.amount_of_coffee_beans_g -= recipe.ground_coffee_amount_g;
-            resources.amount_of_water_ml -= recipe.water_amount_ml;
+            resources.amount_of_coffee_beans_g -= recipe.coffee_dosage_g;
+            resources.amount_of_water_ml -= recipe.water_dosage_ml;
+
         } else {
             println!("Not enough resources to do a coffee");
         }
@@ -52,63 +54,65 @@ impl CoffeeMachine {
     pub fn brew() {}
 }
 
-#[derive(Debug)]
-pub enum Coarseness {
-    Fine,
-    Medium,
-    Coarse,
-}
+
 #[derive(Debug)]
 pub struct RecipeInterface {
-    water_amount_ml: u32, // default values: short: 50ml, long: 100ml
-    ground_coffee_amount_g: u32,
+    water_dosage_ml: u32, // default values: short: 50ml, long: 100ml
     coffee_dosage_g: u32, // varies from 10 to 50 in grams
-    coarseness: Coarseness,
     double: bool,
 }
 
 impl RecipeInterface {
-    // Public methods
 
-    fn init() -> Self {
+    // Associated functions
+
+    pub fn init() -> Self {
         Self {
-            water_amount_ml: 0,
-            ground_coffee_amount_g: 0,
+            water_dosage_ml: 0,
             double: false,
-            coarseness: Coarseness::Medium,
             coffee_dosage_g: 25,
         }
     }
+    
+    // Public methods
 
-    pub fn update_coarseness(&mut self, level: &str) {
-        // Return a Coarseness type depending on the user's input
-        self.coarseness = match level.trim().parse() {
-            Ok(1) => Coarseness::Coarse,
-            Ok(2) => Coarseness::Medium,
-            Ok(3) => Coarseness::Fine,
+    pub fn set_double (&mut self, double: bool){
+        self.double = double;
+    }
+
+    pub fn set_coffee_dosage(&mut self, level: String) {
+        // matches the input and coerces it to a safe value
+        let lower_limit = 1;
+        let upper_limit = 15;
+
+        self.coffee_dosage_g = match level.trim().parse() {
+            Ok(num) if (lower_limit..=upper_limit).contains(&num) => num,
             Ok(_) => {
-                println!("Invalid value. Coerced to \"Medium\"");
-                Coarseness::Medium
+                println!("Input number is out of range. Accepted range is {lower_limit}..{upper_limit} (included). Input coerced to {}.", {upper_limit / 2 as u32});
+                upper_limit / 2 as u32
             }
             Err(_) => {
-                println!("Could not resolve from input. Coerced to \"Medium\"");
-                Coarseness::Medium
+                println!("Input not recognized. Accepted range is {lower_limit}..{upper_limit} (included). Input coerced to {}.", {upper_limit / 2 as u32});
+                upper_limit / 2 as u32
             }
         };
-
-        self.update_coffee_dosage_g();
-        // update dosage afterwards
+    }
+    
+    pub fn update_recipe(&mut self) {
+        // Updates the water and ground coffee amount
+        self.set_water_amount_ml();
+        self.doubles_coffee_and_water_dosage_g();
     }
 
     // Private methods
 
-    fn update_coffee_dosage_g(&mut self) {
-        // depending on the coarseness and if a double is selected or not updates the coffee dosage
-        self.coffee_dosage_g = match self.coarseness {
-            Coarseness::Coarse => 10,
-            Coarseness::Medium => 25,
-            Coarseness::Fine => 50,
-        };
+    fn set_water_amount_ml(&mut self){
+        // adds 1.5 times the water as the coffee
+        self.water_dosage_ml += self.coffee_dosage_g*1.5 as u32
+    }
+
+    fn doubles_coffee_and_water_dosage_g(&mut self) {
+        // depending on the coffee dosage (strongness) and if a double is selected or not updates the coffee dosage      
         if self.double {
             // if a double cofee is selected, increase dosage by 50%
             self.coffee_dosage_g *= 1.5 as u32
@@ -152,18 +156,18 @@ impl Resources {
 
     pub fn count_residues(&mut self, recipe: &RecipeInterface) {
         // increment the amount of residues in the coffee machine
-        self.amount_of_residues_g += recipe.ground_coffee_amount_g
+        self.amount_of_residues_g += recipe.coffee_dosage_g
     }
 
-    pub fn check_resources(&mut self) -> bool {
-        // returns true if less than 50g of beans, or
-        // less than 100ml of water, or
-        // more than 1000g of residues
+    pub fn check_resources(&mut self, recipe: &RecipeInterface) -> bool {
+        // returns true if more than requested amount of beans, and
+        // more than requested amount of water, and
+        // less than 1000g of residues
 
         // TODO return which resource is missing by altering reference in place
-        self.amount_of_coffee_beans_g < 50
-            || self.amount_of_water_ml < 100
-            || self.amount_of_residues_g >= 1000
+        self.amount_of_coffee_beans_g > recipe.coffee_dosage_g
+            && self.amount_of_water_ml > recipe.water_dosage_ml
+            && self.amount_of_residues_g < 1000
     }
 
     fn increment_ground_coffee_counter(&mut self) {
