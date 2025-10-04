@@ -14,6 +14,10 @@ pub struct CoffeeMachine {
     // these values should not be reseted after shutdown
     global_coffees_made: u32,
     file_location: String,
+    needs_water: bool,
+    needs_beans: bool,
+    needs_grounds_removal: bool,
+    coffee_ground: bool,
 }
 
 impl CoffeeMachine {
@@ -26,33 +30,42 @@ impl CoffeeMachine {
             Self {
                 global_coffees_made: 0,
                 file_location: String::from("To do..."),
+                needs_beans: false,
+                needs_water: false,
+                needs_grounds_removal: false,
+                coffee_ground: false,
             },
             RecipeInterface::init(),
             Resources::init(),
         );
+        
     }
 
     pub fn grind(&mut self, resources: &mut Resources, recipe: &mut RecipeInterface) {
-        if resources.check_resources(&recipe) {
+        // first, check if the coffe can be ground
+        self.coffee_ground = resources.check_resources(&recipe);
+
+        // then grind the coffee, or warn if failed
+        if self.coffee_ground {
             println!("grinding coffee...");
-
-            resources.increment_ground_coffee_counter();
-
             self.global_coffees_made += 1;
-
             resources.amount_of_coffee_beans_g -= recipe.coffee_dosage_g;
-            resources.amount_of_water_ml -= recipe.water_dosage_ml;
-
         } else {
             println!("Not enough resources to do a coffee");
         }
     }
 
-    pub fn heat_water() {}
+    pub fn brew(&mut self, resources: &mut Resources, recipe: &RecipeInterface) {
 
-    pub fn add_hot_water() {}
-
-    pub fn brew() {}
+        if self.coffee_ground{
+            println!("brewing coffee");
+            resources.amount_of_water_ml -= recipe.water_dosage_ml;
+            println!("coffee has been brewed!");
+            self.coffee_ground = false; // return this to false so we cannot brew 2 coffees in a row
+        } else {
+            println!("grind the coffee beans first before brewing");
+        }
+    }
 }
 
 
@@ -64,9 +77,7 @@ pub struct RecipeInterface {
 }
 
 impl RecipeInterface {
-
     // Associated functions
-
     pub fn init() -> Self {
         Self {
             water_dosage_ml: 0,
@@ -76,15 +87,14 @@ impl RecipeInterface {
     }
     
     // Public methods
-
     pub fn set_double (&mut self, double: bool){
         self.double = double;
     }
 
     pub fn set_coffee_dosage(&mut self, level: String) {
         // matches the input and coerces it to a safe value
-        let lower_limit = 1;
-        let upper_limit = 15;
+        let lower_limit = 10;
+        let upper_limit = 20;
 
         self.coffee_dosage_g = match level.trim().parse() {
             Ok(num) if (lower_limit..=upper_limit).contains(&num) => num,
@@ -108,15 +118,16 @@ impl RecipeInterface {
     // Private methods
 
     fn set_water_amount_ml(&mut self){
-        // adds 1.5 times the water as the coffee
-        self.water_dosage_ml += self.coffee_dosage_g*1.5 as u32
+        // adds 2 times the water as the coffee
+        self.water_dosage_ml += self.coffee_dosage_g*2 as u32
     }
 
     fn doubles_coffee_and_water_dosage_g(&mut self) {
         // depending on the coffee dosage (strongness) and if a double is selected or not updates the coffee dosage      
         if self.double {
-            // if a double cofee is selected, increase dosage by 50%
-            self.coffee_dosage_g *= 1.5 as u32
+            // if a double cofee is selected, increase dosage by 100%
+            self.coffee_dosage_g *= 2 as u32;
+            self.set_water_amount_ml();
         }
     }
 }
@@ -126,10 +137,6 @@ pub struct Resources {
     amount_of_water_ml: u32,
     amount_of_coffee_beans_g: u32,
     amount_of_residues_g: u32,
-    current_coffees_ground: u32,
-    needs_water: bool,
-    needs_beans: bool,
-    needs_grounds_removal: bool,
 }
 
 impl Resources {
@@ -140,10 +147,6 @@ impl Resources {
             amount_of_coffee_beans_g: 0,
             amount_of_residues_g: 0,
             amount_of_water_ml: 0,
-            current_coffees_ground: 0,
-            needs_water: false,
-            needs_beans: false,
-            needs_grounds_removal: false,
         }
     }
     pub fn sim_user_add_water(&mut self, amount_added_ml: u32) {
@@ -172,7 +175,8 @@ impl Resources {
             && self.amount_of_residues_g < 1000
     }
 
-    fn increment_ground_coffee_counter(&mut self) {
-        self.current_coffees_ground += 1;
+    pub fn get_resource_amount (&self) -> (u32, u32){
+        (self.amount_of_coffee_beans_g, self.amount_of_water_ml)
     }
+
 }
