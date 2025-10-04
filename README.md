@@ -13,14 +13,14 @@ This project is a terminal-based simulation of a fully automated espresso machin
   - Users interact via a text-based menu with numbered options (e.g., "1. Brew espresso", "2. Refill water").  
   - The program must exit cleanly when the user selects an "Exit" option.  
 
-- [ ] **req-1**: **Resource Tracking**  
+- [x] **req-1**: **Resource Tracking**  
   - Track the following resources in real-time:  
     - Water tank level (mL).  
     - Coffee bean hopper capacity (grams).  
     - Used coffee grounds container (grams).  
   - Default initial values (e.g., 1000 mL water, 500g beans, 0g grounds).  
 
-- [ ] **req-2**: **Core Brewing Process**  
+- [/] **req-2**: **Core Brewing Process**  
   1. **Grind Coffee Beans**:  
      - Consume 15g of beans per espresso shot.  
      - Transfer used grounds to the container.  
@@ -62,7 +62,7 @@ This project is a terminal-based simulation of a fully automated espresso machin
     - Espresso: 15g beans, 30mL water.  
     - Lungo: 15g beans, 60mL water.  
 
-- [ ] **req-9**: **Brew Customization**  
+- [x] **req-9**: **Brew Customization**  
   - Allow users to input custom quantities (e.g., "Brew with 20g beans, 50mL water").  
 
 - [ ] **req-10**: **Logging**  
@@ -87,16 +87,3 @@ The program simulates the operation of a coffee machine in the terminal. Users i
 The program tracks resources in real-time and prevents actions that would exceed available resources (e.g., brewing without enough water or beans). It also provides warnings and maintenance prompts to ensure the machine operates smoothly.
 
 ---
-
-## Setup and Usage
-
-### Prerequisites
-- Rust installed on your system. If not, install it from [rustup.rs](https://rustup.rs/).
-
-### Running the Program
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd <repository-folder>
-   ```
-   
