@@ -9,6 +9,7 @@ TODOs
 
 */
 
+#[derive(Debug)]
 pub struct CoffeeMachine {
     // these values should not be reseted after shutdown
     global_coffees_made: u32,
@@ -120,6 +121,7 @@ impl RecipeInterface {
     }
 }
 
+#[derive(Debug)]
 pub struct Resources {
     amount_of_water_ml: u32,
     amount_of_coffee_beans_g: u32,
