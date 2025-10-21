@@ -1,10 +1,9 @@
 pub mod controller;
-use crate::controller::{CoffeeMachine};
+use crate::controller::CoffeeMachine;
 
 fn main() {
-
     // initializing the machine, the recipe and the resources
-    let (mut coffe_machine, mut recipe, mut resources) = CoffeeMachine::init(); 
+    let (mut coffe_machine, mut recipe, mut resources) = CoffeeMachine::init();
 
     // adding 500g of beans and 1000ml of water
     resources.sim_user_add_beans(500);
@@ -20,9 +19,11 @@ fn main() {
     // grinding and brewing a coffee...
     coffe_machine.grind(&mut resources, &mut recipe);
     coffe_machine.brew(&mut resources, &recipe);
-    
+
     // checking our resources left
     let mut resource_snapshot = resources.get_resource_amount();
-    println!("Resources left:\n\t{}g of beans\n\t{}ml of water", resource_snapshot.0, resource_snapshot.1);
-
+    println!(
+        "Resources left:\n\t{}g of beans\n\t{}ml of water",
+        resource_snapshot.0, resource_snapshot.1
+    );
 }

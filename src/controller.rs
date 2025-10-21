@@ -21,7 +21,6 @@ pub struct CoffeeMachine {
 }
 
 impl CoffeeMachine {
-    
     pub fn init() -> (Self, RecipeInterface, Resources) {
         /*
             Initializes the coffee machine by returning an instance of Self, Recipe and Resources for operations
@@ -38,7 +37,6 @@ impl CoffeeMachine {
             RecipeInterface::init(),
             Resources::init(),
         );
-        
     }
 
     pub fn grind(&mut self, resources: &mut Resources, recipe: &mut RecipeInterface) {
@@ -56,8 +54,7 @@ impl CoffeeMachine {
     }
 
     pub fn brew(&mut self, resources: &mut Resources, recipe: &RecipeInterface) {
-
-        if self.coffee_ground{
+        if self.coffee_ground {
             println!("brewing coffee");
             resources.amount_of_water_ml -= recipe.water_dosage_ml;
             println!("coffee has been brewed!");
@@ -66,8 +63,24 @@ impl CoffeeMachine {
             println!("grind the coffee beans first before brewing");
         }
     }
-}
 
+    pub fn needs_water(&self) -> bool {
+        // get needs_water flag
+        self.needs_water
+    }
+
+    pub fn file_location(&self) -> &str {
+        &self.file_location
+    }
+
+    pub fn needs_beans(&self) -> bool {
+        self.needs_beans
+    }
+
+    pub fn needs_grounds_removal(&self) -> bool {
+        self.needs_grounds_removal
+    }
+}
 
 #[derive(Debug)]
 pub struct RecipeInterface {
@@ -85,9 +98,9 @@ impl RecipeInterface {
             coffee_dosage_g: 25,
         }
     }
-    
+
     // Public methods
-    pub fn set_double (&mut self, double: bool){
+    pub fn set_double(&mut self, double: bool) {
         self.double = double;
     }
 
@@ -108,7 +121,7 @@ impl RecipeInterface {
             }
         };
     }
-    
+
     pub fn update_recipe(&mut self) {
         // Updates the water and ground coffee amount
         self.set_water_amount_ml();
@@ -117,13 +130,13 @@ impl RecipeInterface {
 
     // Private methods
 
-    fn set_water_amount_ml(&mut self){
+    fn set_water_amount_ml(&mut self) {
         // adds 2 times the water as the coffee
-        self.water_dosage_ml += self.coffee_dosage_g*2 as u32
+        self.water_dosage_ml += self.coffee_dosage_g * 2 as u32
     }
 
     fn doubles_coffee_and_water_dosage_g(&mut self) {
-        // depending on the coffee dosage (strongness) and if a double is selected or not updates the coffee dosage      
+        // depending on the coffee dosage (strongness) and if a double is selected or not updates the coffee dosage
         if self.double {
             // if a double cofee is selected, increase dosage by 100%
             self.coffee_dosage_g *= 2 as u32;
@@ -175,8 +188,7 @@ impl Resources {
             && self.amount_of_residues_g < 1000
     }
 
-    pub fn get_resource_amount (&self) -> (u32, u32){
+    pub fn get_resource_amount(&self) -> (u32, u32) {
         (self.amount_of_coffee_beans_g, self.amount_of_water_ml)
     }
-
 }
