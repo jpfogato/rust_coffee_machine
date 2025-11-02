@@ -21,7 +21,7 @@ fn main() {
     coffe_machine.brew(&mut resources, &recipe);
 
     // checking our resources left
-    let mut resource_snapshot = resources.get_resource_amount();
+    let resource_snapshot = resources.get_resource_amount();
     println!(
         "Resources left:\n\t{}g of beans\n\t{}ml of water",
         resource_snapshot.0, resource_snapshot.1

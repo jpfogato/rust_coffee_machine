@@ -5,9 +5,11 @@ Implements these classes:
     - Resources: tracks water, beans and waste disposal levels
 
 TODOs
-1. implement file reading so values from a previous operation are store as a byte array and parsed to initialize the class
+[ ] file reading so values from a previous operation are store as a byte array and parsed to initialize the class
 
 */
+
+use coffe_machine::file_operations::{ReadFromFile, WriteToFile};
 
 #[derive(Debug)]
 pub struct CoffeeMachine {
@@ -21,7 +23,7 @@ pub struct CoffeeMachine {
 }
 
 impl CoffeeMachine {
-    pub fn init() -> (Self, RecipeInterface, Resources) {
+    pub fn init() -> (Self, Recipe, Resources) {
         /*
             Initializes the coffee machine by returning an instance of Self, Recipe and Resources for operations
         */
@@ -34,12 +36,12 @@ impl CoffeeMachine {
                 needs_grounds_removal: false,
                 coffee_ground: false,
             },
-            RecipeInterface::init(),
+            Recipe::init(),
             Resources::init(),
         );
     }
 
-    pub fn grind(&mut self, resources: &mut Resources, recipe: &mut RecipeInterface) {
+    pub fn grind(&mut self, resources: &mut Resources, recipe: &mut Recipe) {
         // first, check if the coffe can be ground
         self.coffee_ground = resources.check_resources(&recipe);
 
@@ -53,7 +55,7 @@ impl CoffeeMachine {
         }
     }
 
-    pub fn brew(&mut self, resources: &mut Resources, recipe: &RecipeInterface) {
+    pub fn brew(&mut self, resources: &mut Resources, recipe: &Recipe) {
         if self.coffee_ground {
             println!("brewing coffee");
             resources.amount_of_water_ml -= recipe.water_dosage_ml;
@@ -83,13 +85,13 @@ impl CoffeeMachine {
 }
 
 #[derive(Debug)]
-pub struct RecipeInterface {
+pub struct Recipe {
     water_dosage_ml: u32, // default values: short: 50ml, long: 100ml
     coffee_dosage_g: u32, // varies from 10 to 50 in grams
     double: bool,
 }
 
-impl RecipeInterface {
+impl Recipe {
     // Associated functions
     pub fn init() -> Self {
         Self {
@@ -172,12 +174,12 @@ impl Resources {
         self.amount_of_coffee_beans_g += self.amount_of_coffee_beans_g + amount_added_g
     }
 
-    pub fn count_residues(&mut self, recipe: &RecipeInterface) {
+    pub fn count_residues(&mut self, recipe: &Recipe) {
         // increment the amount of residues in the coffee machine
         self.amount_of_residues_g += recipe.coffee_dosage_g
     }
 
-    pub fn check_resources(&mut self, recipe: &RecipeInterface) -> bool {
+    pub fn check_resources(&mut self, recipe: &Recipe) -> bool {
         // returns true if more than requested amount of beans, and
         // more than requested amount of water, and
         // less than 1000g of residues
