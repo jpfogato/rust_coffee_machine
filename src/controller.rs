@@ -9,8 +9,6 @@ TODOs
 
 */
 
-use coffe_machine::file_operations::{ReadFromFile, WriteToFile};
-
 #[derive(Debug)]
 pub struct CoffeeMachine {
     // these values should not be reseted after shutdown
