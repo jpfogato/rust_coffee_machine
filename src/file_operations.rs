@@ -23,6 +23,9 @@
 
 use std::cmp::{Eq, PartialEq};
 use std::collections::HashMap;
+use std::fs;
+use std::io::Read;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub enum FileOffsets {
@@ -56,15 +59,19 @@ pub fn initialize_file_offsets() -> HashMap<FileOffsets, (i32, u8)> {
 pub struct FileHandler {
     // create a variable with a MemoryMap type
     file_offsets: HashMap<FileOffsets, (i32, u8)>,
-    buffer: Buffer,
+    buffer_handler: Buffer,
+    file_path: PathBuf,
 }
 impl FileHandler {
     // initialize the FileHandler data with the file offsets
     pub fn initialize_file_handler() -> FileHandler {
-        FileHandler {
+        let mut class = FileHandler {
             file_offsets: initialize_file_offsets(),
-            buffer: Buffer::initialize_buffer(),
-        }
+            buffer_handler: Buffer::initialize_buffer(),
+            file_path: Path::new("/etc/coffee_machine/runtime.bin").to_owned(),
+        };
+        class.retrieve_stored_data();
+        return class;
     }
 
     // Updates data from the live buffer with 'data' at the 'location'
@@ -80,7 +87,7 @@ impl FileHandler {
                 let mut offset: i32 = 0;
                 while offset < *size as i32 {
                     offset = start_offset + n;
-                    self.buffer.buffer[offset as usize] = data[n as usize];
+                    self.buffer_handler.buffer[offset as usize] = data[n as usize];
                     n += 1;
                 }
             }
@@ -92,7 +99,20 @@ impl FileHandler {
 
     // Checks storage for last session file, if not found, returns a default value and write it to
     // disk. Updates the live buffer with the data retrieved or with those default values.
-    fn retrieve_stored_data(&mut self) {}
+    fn retrieve_stored_data(&mut self) {
+        match fs::read_to_string(&self.file_path) {
+            Ok(data) => {
+                self.overwrite_buffer_with_data_from_file(data);
+            }
+            Err(_) => todo!(),
+        }
+    }
+
+    // Updates the whole buffer at once with the string read from the file
+    fn overwrite_buffer_with_data_from_file(&mut self, data: String) {
+        let data = data.as_bytes();
+        self.buffer_handler.set_buffer(data);
+    }
 }
 
 // Buffer management
@@ -110,5 +130,9 @@ impl Buffer {
     fn get_buffer(&self) -> [u8; 128] {
         // getter for buffer
         self.buffer
+    }
+
+    pub fn set_buffer(&mut self, data: &[u8]) {
+        self.buffer = data.try_into().expect("buffer shall have 128 elements!");
     }
 }
