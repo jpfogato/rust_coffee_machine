@@ -113,10 +113,11 @@ pub mod file_handler {
                 Err(_) => {
                     // an error here means that the file does not exists in the disk
                     // solve that by creating a new empty file
-                    // extracts the full path
-                    let folder_name = Path::parent(&self.file_path).unwrap();
+                    let folder_name = Path::parent(&self.file_path)
+                        .expect("Unable to extract parent from file_path");
                     fs::create_dir_all(folder_name).expect("Unable to create folder");
-                    fs::write(&self.file_path, [0; 128]).unwrap_err();
+                    fs::write(&self.file_path, [0; 128])
+                        .expect("unable to write an empty byte array to the file");
                     self.initialize_buffer();
                 }
             }
@@ -134,8 +135,16 @@ pub mod file_handler {
         }
 
         // Non-destructive getter for buffer
-        pub fn get_buffer(&self) -> &[u8; 128] {
+        pub fn get_entire_buffer(&self) -> &[u8; 128] {
             &self.buffer
+        }
+
+        pub fn get_value_from_buffer(&self, what: FileOffsets) -> u64 {
+            let value = 1;
+
+            //self.buffer[self.file_offsets.get(what)..8];
+
+            value
         }
 
         fn set_buffer(&mut self, data: &[u8]) {
