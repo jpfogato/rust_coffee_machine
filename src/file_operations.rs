@@ -22,12 +22,12 @@
 */
 
 #[cfg(test)]
-mod file_handler {
+pub mod file_handler {
 
     use std::cmp::{Eq, PartialEq};
     use std::collections::HashMap;
-    use std::fs;
-    use std::path::{Path, PathBuf};
+    use std::fs::{self, create_dir_all};
+    use std::path::{self, Path, PathBuf};
 
     #[derive(Debug, Hash, PartialEq, Eq)]
     pub enum FileOffsets {
@@ -42,7 +42,7 @@ mod file_handler {
         DefaultCoffeeDosage,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     pub struct FileHandler {
         // create a variable with a MemoryMap type
         file_offsets: HashMap<FileOffsets, (i32, u8)>,
@@ -56,9 +56,10 @@ mod file_handler {
             let mut new = FileHandler {
                 buffer: [0; 128],
                 file_offsets: Self::create_offset_map(),
-                file_path: Path::new("/etc/coffee_machine/runtime.bin").to_owned(),
+                file_path: Path::new("/tmp/coffee_machine/runtime.bin").to_owned(),
             };
             new.initialize_buffer();
+            new.retrieve_stored_data();
 
             new
         }
@@ -79,7 +80,7 @@ mod file_handler {
         }
 
         // Updates data from the live buffer with 'data' at the 'location'
-        fn update_live_buffer(&mut self, data: u64, location: FileOffsets) {
+        pub fn update_params_on_buffer(&mut self, data: u64, location: FileOffsets) {
             // TODO: Find a better way of generalizing the data input of this function.
             // Ideally the caller should not care about the data that it is sending to
             // it as long as it is a numeric or boolean value.
@@ -94,6 +95,7 @@ mod file_handler {
                         self.buffer[offset as usize] = data[n as usize];
                         n += 1;
                     }
+                    self.update_runtime_file();
                 }
                 None => {
                     todo!()
@@ -106,29 +108,49 @@ mod file_handler {
         fn retrieve_stored_data(&mut self) {
             match fs::read_to_string(&self.file_path) {
                 Ok(data) => {
-                    self.overwrite_buffer_with_data_from_file(data);
+                    self.overwrite_buffer_with_string(data);
                 }
-                Err(_) => todo!(),
+                Err(_) => {
+                    // an error here means that the file does not exists in the disk
+                    // solve that by creating a new empty file
+                    // extracts the full path
+                    let folder_name = Path::parent(&self.file_path).unwrap();
+                    fs::create_dir_all(folder_name).expect("Unable to create folder");
+                    fs::write(&self.file_path, [0; 128]).unwrap_err();
+                    self.initialize_buffer();
+                }
             }
         }
 
         // Updates the whole buffer at once with the string read from the file
-        fn overwrite_buffer_with_data_from_file(&mut self, data: String) {
+        fn overwrite_buffer_with_string(&mut self, data: String) {
             let data = data.as_bytes();
             self.set_buffer(data);
         }
+
         // returns an instance of the buffer type with a zeroed u32 array of 128 elements
         fn initialize_buffer(&mut self) {
             self.buffer = [0; 128];
         }
 
-        fn get_buffer(&self) -> [u8; 128] {
-            // getter for buffer
-            self.buffer
+        // Non-destructive getter for buffer
+        pub fn get_buffer(&self) -> &[u8; 128] {
+            &self.buffer
         }
 
         fn set_buffer(&mut self, data: &[u8]) {
             self.buffer = data.try_into().expect("buffer shall have 128 elements!");
+        }
+
+        // writes the current buffer in the file
+        fn update_runtime_file(&self) {
+            println!("file should be updated now...");
+        }
+    }
+
+    impl Default for FileHandler {
+        fn default() -> Self {
+            Self::new()
         }
     }
 }
