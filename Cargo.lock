@@ -3,5 +3,14 @@
 version = 4
 
 [[package]]
+name = "binbin"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1343c8f0f3135000e98439db2607991fac7c07d9c1991cb8161e25bcc77b494c"
+
+[[package]]
 name = "coffe_machine"
 version = "0.1.0"
+dependencies = [
+ "binbin",
+]

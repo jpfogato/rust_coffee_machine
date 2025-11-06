@@ -28,6 +28,7 @@ pub mod file_handler {
     use std::collections::HashMap;
     use std::fs::{self, create_dir_all};
     use std::path::{self, Path, PathBuf};
+    use std::string;
 
     #[derive(Debug, Hash, PartialEq, Eq)]
     pub enum FileOffsets {
@@ -47,18 +48,17 @@ pub mod file_handler {
         // create a variable with a MemoryMap type
         file_offsets: HashMap<FileOffsets, (i32, u8)>,
         file_path: PathBuf,
-        buffer: [u8; 128],
+        runtime_params: Vec<u8>,
     }
 
     impl FileHandler {
         // initialize the FileHandler data with the file offsets
         pub fn new() -> FileHandler {
             let mut new = FileHandler {
-                buffer: [0; 128],
+                runtime_params: Vec::<u8>::new(),
                 file_offsets: Self::create_offset_map(),
                 file_path: Path::new("/tmp/coffee_machine/runtime.bin").to_owned(),
             };
-            new.initialize_buffer();
             new.retrieve_stored_data();
 
             new
@@ -80,22 +80,18 @@ pub mod file_handler {
         }
 
         // Updates data from the live buffer with 'data' at the 'location'
-        pub fn update_params_on_buffer(&mut self, data: u64, location: FileOffsets) {
-            // TODO: Find a better way of generalizing the data input of this function.
-            // Ideally the caller should not care about the data that it is sending to
-            // it as long as it is a numeric or boolean value.
+        pub fn update_runtime_params(&mut self, data: String, location: FileOffsets) {
             match self.file_offsets.get(&location) {
                 Some((start_offset, size)) => {
-                    let data = data.to_le_bytes(); // TODO: read from buffer to check if file
-                                                   // is LE or BE
+                    let data = data.as_bytes();
                     let mut n: i32 = 0;
                     let mut offset: i32 = 0;
                     while offset < *size as i32 {
                         offset = start_offset + n;
-                        self.buffer[offset as usize] = data[n as usize];
+                        self.runtime_params[offset as usize] = data[n as usize];
                         n += 1;
                     }
-                    self.update_runtime_file();
+                    self.write_runtime_file();
                 }
                 None => {
                     todo!()
@@ -103,9 +99,12 @@ pub mod file_handler {
             };
         }
 
-        // Checks storage for last session file, if not found, returns a default value and write it to
-        // disk. Updates the live buffer with the data retrieved or with those default values.
-        fn retrieve_stored_data(&mut self) {
+        // writes the current buffer in the file
+        fn write_runtime_file(&mut self) {}
+
+        /// Checks storage for last session file, if not found, returns a default value and write it to
+        /// disk. Updates the live buffer with the data retrieved or with those default values.
+        pub fn retrieve_stored_data(&mut self) {
             match fs::read_to_string(&self.file_path) {
                 Ok(data) => {
                     self.overwrite_buffer_with_string(data);
@@ -118,7 +117,6 @@ pub mod file_handler {
                     fs::create_dir_all(folder_name).expect("Unable to create folder");
                     fs::write(&self.file_path, [0; 128])
                         .expect("unable to write an empty byte array to the file");
-                    self.initialize_buffer();
                 }
             }
         }
@@ -129,31 +127,23 @@ pub mod file_handler {
             self.set_buffer(data);
         }
 
-        // returns an instance of the buffer type with a zeroed u32 array of 128 elements
-        fn initialize_buffer(&mut self) {
-            self.buffer = [0; 128];
+        // Non-destructive getter for a slice of the run-time buffer
+        fn get_buffer_slice(&self, offset: usize, length: usize) -> &[u8] {
+            let length: usize = length + &offset;
+            &self.runtime_params[offset..=length]
         }
 
-        // Non-destructive getter for buffer
-        pub fn get_entire_buffer(&self) -> &[u8; 128] {
-            &self.buffer
-        }
-
-        pub fn get_value_from_buffer(&self, what: FileOffsets) -> u64 {
-            let value = 1;
-
-            //self.buffer[self.file_offsets.get(what)..8];
-
-            value
+        // retrieves a slice offseted by the FileOffsets from the vector with the live runtime data
+        pub fn get_param(&self, what: FileOffsets) -> &[u8] {
+            let item = &self
+                .file_offsets
+                .get(&what)
+                .expect("Element not implemented");
+            self.get_buffer_slice(item.0 as usize, item.1 as usize)
         }
 
         fn set_buffer(&mut self, data: &[u8]) {
-            self.buffer = data.try_into().expect("buffer shall have 128 elements!");
-        }
-
-        // writes the current buffer in the file
-        fn update_runtime_file(&self) {
-            println!("file should be updated now...");
+            self.runtime_params = data.try_into().expect("buffer shall have 128 elements!");
         }
     }
 
