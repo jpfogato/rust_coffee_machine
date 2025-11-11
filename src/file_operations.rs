@@ -1,6 +1,7 @@
 /* This is the file handling module.
 * Exposes an API that allows for a binary file to be written to a set location on disk, and then
 * retrieved for setting the machine's standard values.
+* Check function "initialize_vector" to verify the following implementation
 * It implements a custom binary format defined by the following table:
 * offset (bytes)   |   data_type   |   comment
 *   0   |   u8  | version major
@@ -55,13 +56,45 @@ pub mod file_handler {
         // initialize the FileHandler data with the file offsets
         pub fn new() -> FileHandler {
             let mut new = FileHandler {
-                runtime_params: Vec::<u8>::new(),
+                runtime_params: Self::initialize_vector(128),
                 file_offsets: Self::create_offset_map(),
                 file_path: Path::new("/tmp/coffee_machine/runtime.bin").to_owned(),
             };
             new.retrieve_stored_data();
 
             new
+        }
+
+        // initializes the vector with default data
+        fn initialize_vector(size: u64) -> Vec<u8> {
+            let mut buf = Vec::<u8>::new();
+            binbin::write_vec_le(&mut buf, |w| {
+                let header_start = w.position()? as u32;
+                let header_len = w.deferred(0 as u32);
+                //w.write(&b"\x7fELF"[..])?;
+                w.write(1 as u8)?; // version major
+                w.write(0 as u8)?; // version minor
+                w.write(0 as u8)?; // version bugfix
+                w.write(0 as u8)?; // endianess -> little
+                w.skip(20)?; // adds 20 bytes of padding here
+                w.write(0 as u32)?; // number of coffees made
+                w.write(0 as u8)?; // needs coffee flag
+                w.write(0 as u8)?; // needs water flag
+                w.write(0 as u8)?; // needs grounds removal flag
+                w.write(0 as u8)?; // needs descaling flag
+                w.write(0 as u32)?; // active brew time in minutes
+                w.write(0 as u32)?; // time in minutes since last coffee brewed
+                w.write(0 as u32)?; // default water dosage in mls
+                w.write(0 as u32)?; // default coffee dosage in grams
+                w.write(0 as u32)?; // size of program header entry (none)
+                w.write(0 as u32)?; // number of program header entries (none)
+                let file_end = w.position();
+                let padding = size - file_end.unwrap_or_default();
+                w.skip(padding as usize); // writes 74 bytes of padding to ensure buffer has 128 bytes
+                Ok(())
+            })
+            .expect("error allocating vector");
+            buf
         }
 
         // Returs a map of K: FileOffset enum, V: (index, size)
@@ -102,9 +135,9 @@ pub mod file_handler {
         // writes the current buffer in the file
         fn write_runtime_file(&mut self) {}
 
-        /// Checks storage for last session file, if not found, returns a default value and write it to
-        /// disk. Updates the live buffer with the data retrieved or with those default values.
         pub fn retrieve_stored_data(&mut self) {
+            /// Checks storage for last session file, if not found, returns a default value and write it to
+            /// disk. Updates the live buffer with the data retrieved or with those default values.
             match fs::read_to_string(&self.file_path) {
                 Ok(data) => {
                     self.overwrite_buffer_with_string(data);
