@@ -2,7 +2,7 @@
 
 This project is a terminal-based simulation of a fully automated espresso machine, written entirely in Rust. It mimics the behavior of a real coffee machine, including grinding coffee, boiling water, injecting water, and handling maintenance tasks like refilling water and beans or removing used grounds.
 
----
+--
 
 ## Requirements Checklist
 
