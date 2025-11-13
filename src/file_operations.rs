@@ -28,6 +28,7 @@ pub mod file_handler {
     use std::cmp::{Eq, PartialEq};
     use std::collections::HashMap;
     use std::fs::{self, create_dir_all};
+    use std::io::{Read, Write};
     use std::path::{self, Path, PathBuf};
     use std::string;
 
@@ -66,7 +67,7 @@ pub mod file_handler {
         }
 
         // initializes the vector with default data
-        fn initialize_vector(size: u64) -> Vec<u8> {
+        pub fn initialize_vector(size: u64) -> Vec<u8> {
             let mut buf = Vec::<u8>::new();
             binbin::write_vec_le(&mut buf, |w| {
                 let header_start = w.position()? as u32;
@@ -136,28 +137,31 @@ pub mod file_handler {
         fn write_runtime_file(&mut self) {}
 
         pub fn retrieve_stored_data(&mut self) {
-            /// Checks storage for last session file, if not found, returns a default value and write it to
-            /// disk. Updates the live buffer with the data retrieved or with those default values.
-            match fs::read_to_string(&self.file_path) {
-                Ok(data) => {
-                    self.overwrite_buffer_with_string(data);
-                }
-                Err(_) => {
-                    // an error here means that the file does not exists in the disk
-                    // solve that by creating a new empty file
-                    let folder_name = Path::parent(&self.file_path)
-                        .expect("Unable to extract parent from file_path");
-                    fs::create_dir_all(folder_name).expect("Unable to create folder");
-                    fs::write(&self.file_path, [0; 128])
-                        .expect("unable to write an empty byte array to the file");
-                }
-            }
+            // Checks storage for last session file, if not found, returns a default value and write it to
+            // disk. Updates the live buffer with the data retrieved or with those default values.
         }
 
         // Updates the whole buffer at once with the string read from the file
-        fn overwrite_buffer_with_string(&mut self, data: String) {
-            let data = data.as_bytes();
-            self.set_buffer(data);
+        fn read_params_from_file(&mut self) {
+            let parent_folder = Path::parent(&self.file_path);
+
+            match fs::File::open(&self.file_path) {
+                Ok(file_refnum) => {
+                    let mut buffer: Vec<u8> = vec![0; 128];
+                    self.runtime_params = file_refnum.read(buffer.as_slice());
+                }
+                Err(_) => {
+                    // an error here means that the file does not exists.
+                    // first, try to create dir
+                    fs::create_dir_all(parent_folder.unwrap()).expect("Unable to create folder");
+                    // then try to create the file itself
+                    let mut file =
+                        fs::File::create_new(&self.file_path).expect("unable to create file");
+                    let vector = FileHandler::initialize_vector(128);
+                    file.write_all(&vector)
+                        .expect("unable to write an initialized byte array to the file");
+                }
+            }
         }
 
         // Non-destructive getter for a slice of the run-time buffer
