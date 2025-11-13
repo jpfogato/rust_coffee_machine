@@ -61,7 +61,7 @@ pub mod file_handler {
                 file_offsets: Self::create_offset_map(),
                 file_path: Path::new("/tmp/coffee_machine/runtime.bin").to_owned(),
             };
-            new.retrieve_stored_data();
+            new.read_whole_file();
 
             new
         }
@@ -125,7 +125,7 @@ pub mod file_handler {
                         self.runtime_params[offset as usize] = data[n as usize];
                         n += 1;
                     }
-                    self.write_runtime_file();
+                    self.write_whole_file();
                 }
                 None => {
                     todo!()
@@ -134,21 +134,29 @@ pub mod file_handler {
         }
 
         // writes the current buffer in the file
-        fn write_runtime_file(&mut self) {}
+        fn write_whole_file(&mut self) {}
 
-        pub fn retrieve_stored_data(&mut self) {
-            // Checks storage for last session file, if not found, returns a default value and write it to
-            // disk. Updates the live buffer with the data retrieved or with those default values.
-        }
-
-        // Updates the whole buffer at once with the string read from the file
-        fn read_params_from_file(&mut self) {
+        // Updates the whole buffer at once with the data read from the file
+        fn read_whole_file(&mut self) {
+            // casts the folder dir from string to Path Type
             let parent_folder = Path::parent(&self.file_path);
 
+            // attempts to open the file
             match fs::File::open(&self.file_path) {
-                Ok(file_refnum) => {
+                // if succeeded, try to read it
+                Ok(mut file_refnum) => {
                     let mut buffer: Vec<u8> = vec![0; 128];
-                    self.runtime_params = file_refnum.read(buffer.as_slice());
+                    match file_refnum.read_to_end(&mut buffer) {
+                        // there's something to read in the file,
+                        // the buffer variable has been mutated in place, so we can ignore the Ok return
+                        Ok(_) => {
+                            self.runtime_params = buffer;
+                        }
+                        // else, panics and return the error
+                        Err(e) => {
+                            eprintln!("Error reading file: {}", e);
+                        }
+                    }
                 }
                 Err(_) => {
                     // an error here means that the file does not exists.
