@@ -22,7 +22,6 @@
 *   54..128 |   -- | space for future status tracking expansion
 */
 
-#[cfg(test)]
 pub mod file_handler {
 
     use std::cmp::{Eq, PartialEq};
@@ -34,7 +33,7 @@ pub mod file_handler {
 
     #[derive(Debug, Hash, PartialEq, Eq)]
     pub enum FileOffsets {
-        // TODO: define elements as they are required
+        // TODO: define more elements as they are required
         Endianess,
         NumberOfCoffessBrewed,
         NeedsCoffeeBeans,
@@ -46,9 +45,10 @@ pub mod file_handler {
     }
 
     #[derive(Debug, PartialEq)]
+    #[allow(dead_code)]
     pub struct FileHandler {
         // create a variable with a MemoryMap type
-        file_offsets: HashMap<FileOffsets, (i32, u8)>,
+        pub file_offsets: HashMap<FileOffsets, (i32, u8)>,
         file_path: PathBuf,
         runtime_params: Vec<u8>,
     }
@@ -67,12 +67,11 @@ pub mod file_handler {
         }
 
         // initializes the vector with default data
-        pub fn initialize_vector(size: u64) -> Vec<u8> {
+        fn initialize_vector(size: u64) -> Vec<u8> {
             let mut buf = Vec::<u8>::new();
             binbin::write_vec_le(&mut buf, |w| {
                 let header_start = w.position()? as u32;
                 let header_len = w.deferred(0 as u32);
-                //w.write(&b"\x7fELF"[..])?;
                 w.write(1 as u8)?; // version major
                 w.write(0 as u8)?; // version minor
                 w.write(0 as u8)?; // version bugfix
@@ -174,8 +173,8 @@ pub mod file_handler {
 
         // Non-destructive getter for a slice of the run-time buffer
         fn get_buffer_slice(&self, offset: usize, length: usize) -> &[u8] {
-            let length: usize = length + &offset;
-            &self.runtime_params[offset..=length]
+            let length: usize = &offset + length;
+            &self.runtime_params[offset..length]
         }
 
         // retrieves a slice offseted by the FileOffsets from the vector with the live runtime data
