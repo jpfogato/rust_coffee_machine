@@ -26,10 +26,9 @@ pub mod file_handler {
 
     use std::cmp::{Eq, PartialEq};
     use std::collections::HashMap;
-    use std::fs::{self, create_dir_all};
+    use std::fs::{self};
     use std::io::{Read, Write};
-    use std::path::{self, Path, PathBuf};
-    use std::string;
+    use std::path::{Path, PathBuf};
 
     #[derive(Debug, Hash, PartialEq, Eq)]
     pub enum FileOffsets {
@@ -162,8 +161,8 @@ pub mod file_handler {
                     // first, try to create dir
                     fs::create_dir_all(parent_folder.unwrap()).expect("Unable to create folder");
                     // then try to create the file itself
-                    let mut file =
-                        fs::File::create_new(&self.file_path).expect("unable to create file");
+                    let mut file = fs::File::create_new(&self.file_path).ok().unwrap();
+                    // we don't care about errors there, specially if error is 17: AlreadyExists
                     let vector = FileHandler::initialize_vector(128);
                     file.write_all(&vector)
                         .expect("unable to write an initialized byte array to the file");
@@ -173,7 +172,7 @@ pub mod file_handler {
 
         // Non-destructive getter for a slice of the run-time buffer
         fn get_buffer_slice(&self, offset: usize, length: usize) -> &[u8] {
-            let length: usize = &offset + length;
+            let length: usize = offset + length;
             &self.runtime_params[offset..length]
         }
 

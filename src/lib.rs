@@ -5,4 +5,4 @@ pub mod file_operations;
 
 // tests
 
-pub mod test;
+pub mod tests;

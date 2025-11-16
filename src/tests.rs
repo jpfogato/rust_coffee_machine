@@ -2,16 +2,14 @@
 */
 
 #[cfg(test)]
-mod tests {
+mod test {
 
     // use crate::controller::CoffeeMachine;
-    use crate::{
-        file_operations::file_handler,
-        file_operations::file_handler::{FileHandler, FileOffsets},
-    };
+    use crate::file_operations::file_handler::{FileHandler, FileOffsets};
     use core::panic;
     use std::{
-        fs::{self},
+        collections::btree_map::IterMut,
+        fs::{self, File},
         vec,
     };
 
@@ -33,38 +31,46 @@ mod tests {
         FileHandler::new()
     }
 
-    fn test_file_content(
+    fn test_file_content<'a>(
         // tests the file from disk directly against what's in the class
-        context: &FileHandler,
-        file_contents: &[u8],
-        item_to_test: FileOffsets,
-    ) {
+        context: &'a FileHandler,
+        file_contents: &'a [u8],
+        item_to_test: &FileOffsets,
+    ) -> &'a [u8] {
         let buffer_item = context.file_offsets.get(&item_to_test);
         if let Some(tuple) = buffer_item {
             let index: usize = tuple.0 as usize;
-            let length: usize = tuple.1 as usize + &index;
-            let value = &file_contents[index..length];
-            assert_eq!(&context.get_param(item_to_test), &value);
-            println!("tested");
+            let length: usize = tuple.1 as usize + index;
+            &file_contents[index..length]
         } else {
-            panic!("could not value is not a tuple")
+            panic!("could not verify file contents")
         }
     }
 
     // FileHandler tests
     #[test] // all tests must implement this attribute
-    fn test_file_hander_init() {
-        // test if the handler can be instantiated
-        let mut file_handler = FileHandler::new();
-    }
-
-    #[test]
-    fn test_struct_vector() {
+    fn test_all_structs() {
         let file_handler = instantiate_file_handler();
         let file_contents = get_vector_from_file("/tmp/coffee_machine/runtime.bin");
-        // TODO investigate why I never see the 'tested' prinln output when calling the function
-        // below:
-        test_file_content(&file_handler, &file_contents, FileOffsets::Endianess);
+
+        // add file positions here for testing
+        let item_to_test = [
+            FileOffsets::Endianess,
+            FileOffsets::NumberOfCoffessBrewed,
+            FileOffsets::NeedsCoffeeBeans,
+            FileOffsets::NeedsWater,
+            FileOffsets::NeedsGroundsRemoval,
+            FileOffsets::NeedsDescaling,
+            FileOffsets::DefaultWaterDosage,
+            FileOffsets::DefaultCoffeeDosage,
+        ];
+
+        for offset in item_to_test {
+            let file_slice = test_file_content(&file_handler, &file_contents, &offset);
+            println!("testing {:?} -> {:?}", &offset, &file_slice);
+
+            assert_eq!(&file_handler.get_param(offset), &file_slice);
+        }
     }
 
     // controller tests
