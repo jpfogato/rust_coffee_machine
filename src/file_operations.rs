@@ -112,10 +112,9 @@ pub mod file_handler {
         }
 
         // Updates data from the live buffer with 'data' at the 'location'
-        pub fn update_runtime_params(&mut self, data: String, location: FileOffsets) {
-            match self.file_offsets.get(&location) {
+        pub fn update_runtime_params(&mut self, data: &[u8], location: &FileOffsets) {
+            match self.file_offsets.get(location) {
                 Some((start_offset, size)) => {
-                    let data = data.as_bytes();
                     let mut n: i32 = 0;
                     let mut offset: i32 = 0;
                     while offset < *size as i32 {
@@ -177,10 +176,10 @@ pub mod file_handler {
         }
 
         // retrieves a slice offseted by the FileOffsets from the vector with the live runtime data
-        pub fn get_param(&self, what: FileOffsets) -> &[u8] {
+        pub fn get_param(&self, what: &FileOffsets) -> &[u8] {
             let item = &self
                 .file_offsets
-                .get(&what)
+                .get(what)
                 .expect("Element not implemented");
             self.get_buffer_slice(item.0 as usize, item.1 as usize)
         }

@@ -47,14 +47,9 @@ mod test {
         }
     }
 
-    // FileHandler tests
-    #[test] // all tests must implement this attribute
-    fn test_all_structs() {
-        let file_handler = instantiate_file_handler();
-        let file_contents = get_vector_from_file("/tmp/coffee_machine/runtime.bin");
-
-        // add file positions here for testing
-        let item_to_test = [
+    fn file_offsets() -> [FileOffsets; 8] {
+        // add new file positions here for testing
+        [
             FileOffsets::Endianess,
             FileOffsets::NumberOfCoffessBrewed,
             FileOffsets::NeedsCoffeeBeans,
@@ -63,14 +58,42 @@ mod test {
             FileOffsets::NeedsDescaling,
             FileOffsets::DefaultWaterDosage,
             FileOffsets::DefaultCoffeeDosage,
-        ];
+        ]
+    }
+
+    // FileHandler tests
+    #[test] // all tests must implement this attribute
+    fn test_all_structs() {
+        let file_handler = instantiate_file_handler();
+        let file_contents = get_vector_from_file("/tmp/coffee_machine/runtime.bin");
+        let item_to_test = file_offsets();
 
         for offset in item_to_test {
             let file_slice = test_file_content(&file_handler, &file_contents, &offset);
             println!("testing {:?} -> {:?}", &offset, &file_slice);
 
-            assert_eq!(&file_handler.get_param(offset), &file_slice);
+            assert_eq!(&file_handler.get_param(&offset), &file_slice);
         }
+    }
+
+    #[test]
+    fn update_runtime_buffer() {
+        let mut file_handler = instantiate_file_handler();
+        let file_contents = get_vector_from_file("/tmp/coffee_machine/runtime.bin");
+
+        let offset = FileOffsets::NeedsWater;
+
+        file_handler.update_runtime_params(&[1], &offset);
+
+        let file_slice = test_file_content(&file_handler, &file_contents, &offset);
+        let tested_value = file_handler.get_param(&offset);
+
+        println!(
+            "testing {:?} -> buffer: {:?} =! file: {:?}",
+            &offset, &tested_value, &file_slice
+        );
+
+        assert_ne!(tested_value, file_slice);
     }
 
     // controller tests
